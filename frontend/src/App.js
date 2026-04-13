@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRecorder } from './hooks/useRecorder';
 import { API_BASE } from './config';
 import { clearAccessToken, getAccessToken, setAccessToken } from './authStorage';
@@ -1053,6 +1053,84 @@ function AdminPanel({ onBack }) {
   );
 }
 
+// ── Onboarding Tutorial ───────────────────────────────────────────────────────
+
+const TUTORIAL_SEEN_KEY = 'vcx_tutorial_seen';
+
+const TUTORIAL_STEPS = [
+  {
+    icon: '🎙️',
+    heading: 'Welcome to Voicera Collector',
+    body: "You're here to record your voice reading short sentences. These recordings help train AI speech models to understand real human speech — every clip you record makes a difference.",
+  },
+  {
+    icon: '🗺️',
+    heading: 'How it works',
+    body: 'Three quick steps: fill in your speaker profile (name, language, region), then read prompts aloud one by one, then submit. A session is about 20 prompts and takes roughly 10–15 minutes.',
+  },
+  {
+    icon: '🤫',
+    heading: 'Tips for great recordings',
+    body: 'Find a quiet spot — background noise degrades the training data. Hold your phone steady, speak at a natural pace, and try to match the rhythm and punctuation of each sentence.',
+  },
+  {
+    icon: '✅',
+    heading: 'Automatic quality check',
+    body: "Each clip is transcribed and compared to the original text. If a clip doesn't pass quality review it gets flagged for admin inspection — you won't need to do anything, just re-record if you felt you made a mistake.",
+  },
+  {
+    icon: '📋',
+    heading: 'Navigating prompts',
+    body: "You'll see one sentence at a time. Tap Record, read it aloud, tap Stop. You can re-record as many times as you like before moving to the next prompt. Use the Back button to revisit any prompt before submitting.",
+  },
+];
+
+function OnboardingTutorial() {
+  const [visible, setVisible] = useState(() => !localStorage.getItem(TUTORIAL_SEEN_KEY));
+  const [step, setStep] = useState(0);
+  const skipRef = useRef(null);
+
+  useEffect(() => {
+    if (visible) skipRef.current?.focus();
+  }, [visible]);
+
+  const dismiss = () => {
+    localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
+    setVisible(false);
+  };
+
+  if (!visible) return null;
+
+  const current = TUTORIAL_STEPS[step];
+  const isLast = step === TUTORIAL_STEPS.length - 1;
+
+  return (
+    <div className="tut-backdrop" role="dialog" aria-modal="true" aria-label="Onboarding tutorial">
+      <div className="tut-modal">
+        <div className="tut-progress">
+          {TUTORIAL_STEPS.map((_, i) => (
+            <span key={i} className={`tut-dot${i === step ? ' active' : ''}`} />
+          ))}
+        </div>
+        <div className="tut-icon" aria-hidden="true">{current.icon}</div>
+        <h2 className="tut-heading">{current.heading}</h2>
+        <p className="tut-body">{current.body}</p>
+        <div className="tut-actions">
+          <button ref={skipRef} className="btn-ghost tut-skip" onClick={dismiss}>
+            Skip
+          </button>
+          {step > 0 && (
+            <button className="btn-ghost" onClick={() => setStep(s => s - 1)}>Back</button>
+          )}
+          <button className="btn-primary" onClick={isLast ? dismiss : () => setStep(s => s + 1)}>
+            {isLast ? 'Get Started' : 'Next →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── App Root ──────────────────────────────────────────────────────────────────
 
 const VIEWS = { STATS: 'stats', SETUP: 'setup', RECORDING: 'recording', ADMIN: 'admin' };
@@ -1188,6 +1266,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <OnboardingTutorial />
       <ApiStatusBar />
       {authMode === 'postgres' && sessionUser?.email ? (
         <UserBar user={sessionUser} onLogout={handleLogout} />
