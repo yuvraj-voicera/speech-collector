@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Env / secrets — NEVER commit real credentials
+backend/.env
+backend/.env.runpod
+# Keep examples
+!backend/.env.example
+!backend/.env.runpod.example
+
+# Frontend build artifacts and deps
+frontend/node_modules/
+frontend/build/
+frontend/.env.local
+frontend/.env.production
+
+# Data / audio files
+*.wav
+*.mp3
+*.ogg
+*.webm
+*.jsonl
+data/
+
+# Logs
+*.log
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db
